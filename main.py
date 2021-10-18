@@ -5,8 +5,8 @@
 import pandas as pd
 import yfinance as yf
 import numpy as np
-
-
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
 # Creo una lista de '1' con tantos elementos como le pasen
 def listaDeUnos(total):
@@ -16,34 +16,36 @@ def listaDeUnos(total):
     return lista
 
 
-# Desplazo toda una lista, un fila hacia abajo
+# Desplazo toda una lista, una posición hacia abajo
 def desplazarColumnaAbajo(lista):
     lista.insert(0, 0)
     lista.pop(len(lista) - 1)
     return lista
 
 
-# -----Inicio Del programa-----
-msft = yf.Ticker("^GSPC")  # Recolecto los datos de sp500
+'''
+ -----Inicio Del programa-----
+    Recolecto los datos de sp500
+'''
+msft = yf.Ticker("^GSPC")
 DatosCrudos = pd.DataFrame(msft.history(end="2021-09-30", start="2021-01-04"))
 
 cierre = []
 rendimientos = []
 
-# Recorro los datos en crudos para guardar los valores 'Close'
-# y crear los rendimientos
-for i in range(len(DatosCrudos.index)): #len(DatosCrudos.index) = 187
+# Recorro los datos en crudo para guardar los valores 'Close' y crear los rendimientos
+for i in range(len(DatosCrudos.index)):
     volumen_Dia = DatosCrudos['Close'][i]
-    if (i != 0):  # desde el segundo día, puedo crear los rendimientos
+    if (i != 0):  # desde el segundo día puedo crear los rendimientos
         cierre.append(volumen_Dia)
         volumen_Dia_Anterior = DatosCrudos['Close'][i - 1]
         rendimiento = (volumen_Dia - volumen_Dia_Anterior) / volumen_Dia_Anterior
         rendimientos.append(rendimiento)
 
-
-
+'''
+Creo un DataFrame que contendrá todos los valores que necesito
+'''
 Matriz = pd.DataFrame()
-
 
 Matriz['P(t)'] = cierre
 Matriz['R(t)'] = rendimientos
@@ -85,25 +87,23 @@ r5 = Matriz['R(t-5)'].values
 
 x = np.array([r0, r1, r2, r3, r4, r5]).T
 y = np.array(Matriz['R(t)'].values)
-
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+'''
+1. De cuantos parámetros consta el modelo? (1 punto)
+    b, de 6  parámetros ya que ...
+'''
 
 reg = LinearRegression()
 reg = reg.fit(x, y)
 Y_pred = reg.predict(x)
 error = np.sqrt(mean_squared_error(y,Y_pred))
 
-print("error: ", error)
-print("Los coeficiones son: ", reg.coef_)
-print("Predicción: ", reg.predict([[1, 0.08, -0.14, -0.13, 0.007, 0.009]]))
-
+print("El primer y el sexto regresor no son iguales, (",Y_pred[0],"!=",Y_pred[5],")")
 '''
-Una vez implementado dicho modelo el alumno deberá producir dos columnas, una con 
-el rendimiento real del activo y otra con el rendimiento predicho y sobre ambas 
-calcular tres métricas: el mse, el mae y el mape.
+2. Los parámetros correspondientes al primero y sexto regresor son iguales? (1 punto)
+    No son iguales porque ...
 '''
 
+#creo un DataFrame de dos columnas con las prediciones y los datos reales
 matriz2 = pd.DataFrame()
 matriz2['Rendimiento_Real'] = Matriz['R(t)']
 matriz2['Rendimiento_Predicho'] = Y_pred
@@ -115,8 +115,7 @@ for i in range(181):
 
 mse = (1 / 181) * mse
 print("mse: ", mse)
-'''
-'''
+
 mae = 0
 
 for i in range(181):
@@ -125,8 +124,8 @@ for i in range(181):
 
 mae = mae/181
 print("mae: ", mae)
-'''
-'''
+
+
 
 mape = 0
 for i in range(181):
@@ -135,10 +134,9 @@ for i in range(181):
 
 mape = mape / 181
 print("mape: ", mape)
-
 '''
-4. Suponga que comparamos las predicciones frente a un paseo aleatorio rt =0
-empleando el mape, las predicciones del modelo lineal son mejores? (2 puntos)
+3. Las tres métricas, proporcionan los mismos resultados (el mismo valor)? (2 puntos)
+    No proporcionan el mismo valor ya que en cada uno de los casos está calculando una cosa distinta....
 '''
 
 mape2 = 0
@@ -149,12 +147,17 @@ for i in range(181):
 mape2 = mape2 / 181
 print("mape2: ", mape2)
 
-
 print("mi modelo es un ",(np.sum(mape)/np.sum(mape2)),"% mejor que el de rt=0")
 
 '''
-Ventana deslizante
+4. Suponga que comparamos las predicciones frente a un paseo aleatorio rt =0
+empleando el mape, ¿las predicciones del modelo lineal son mejores? (2 puntos)
+    Si, son mejores ...
 '''
+
+
+
+#Ventana deslizante
 x_30 = np.delete(x, slice(30,181,1), axis=0)
 y_30 = np.delete(y,slice(30,181,1), axis=0)
 prediccion_ventana =np
@@ -173,8 +176,14 @@ for i in range(30,182):
 
 
 
+print("El valor del tercer regresor utilizando una ventana deslizante (",prediccion_ventana[2],") varia respecto a si no utilizamos dicha ventana (",Y_pred[2],")")
+'''
+5. ¿El valor del parámetro correspondiente al tercer regresor varia? (2 puntos)
+    Si que varia el tercer regresor ...
+'''
 
-'''
-Si que varia el tercer regresor
-'''
 print("Rentabilidad total: ",rentabilidad_total)
+'''
+6. es dicha rentabilidad positiva? (2 puntos)
+    si ....
+'''
