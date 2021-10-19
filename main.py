@@ -85,17 +85,25 @@ r3 = Matriz['R(t-3)'].values
 r4 = Matriz['R(t-4)'].values
 r5 = Matriz['R(t-5)'].values
 
-x = np.array([r0, r1, r2, r3, r4, r5]).T
-y = np.array(Matriz['R(t)'].values)
+'''calculamos los parametros mediante la ecuación normal parametros = (X^t * X)^(-1) * X^t * Y'''
+x = np.array([r0, r1, r2, r3, r4, r5]).T     #X
+xt = np.array([r0, r1, r2, r3, r4, r5])      #X^t
+xi = np.linalg.inv(np.dot(xt, x))            #(X^t * X)^(-1)
+y = np.array(Matriz['R(t)'].values)          #Y
+
+
+parametros = np.dot(np.dot(xi, xt), y)       #(X^t * X)^(-1)  * X^t * Y
+print(parametros)
+
 '''
 1. De cuantos parámetros consta el modelo? (1 punto)
     b, de 6  parámetros ya que ...
 '''
 
-reg = LinearRegression()
-reg = reg.fit(x, y)
-Y_pred = reg.predict(x)
-error = np.sqrt(mean_squared_error(y,Y_pred))
+Y_pred = []
+for i in range(len(x)):
+    Y_pred.append(parametros[0] + parametros[1]*x[i][1] + parametros[2]*x[i][2] + parametros[3]*x[i][3] + parametros[4]*x[i][4])
+
 
 print("El primer y el sexto regresor no son iguales, (",Y_pred[0],"!=",Y_pred[5],")")
 '''
@@ -157,22 +165,27 @@ empleando el mape, ¿las predicciones del modelo lineal son mejores? (2 puntos)
 
 
 
+
+
+
 #Ventana deslizante
-x_30 = np.delete(x, slice(30,181,1), axis=0)
-y_30 = np.delete(y,slice(30,181,1), axis=0)
+
 prediccion_ventana =np
 rentabilidad_total=0
+contador=30
 for i in range(30,182):
-    reg = reg.fit(x_30, y_30)
+    x_30 = np.array([r0[contador-30:contador], r1[contador-30:contador], r2[contador-30:contador], r3[contador-30:contador], r4[contador-30:contador], r5[contador-30:contador]]).T  # X
+    xt_30 = np.array([r0[contador-30:contador], r1[contador-30:contador], r2[contador-30:contador], r3[contador-30:contador], r4[contador-30:contador], r5[contador-30:contador]])     #X^t
+    xi_30 = np.linalg.inv(np.dot(xt_30, x_30))  # (X^t * X)^(-1)
+    y_30 = np.array(Matriz['R(t)'].values[contador-30:contador])
+    parametros = np.dot(np.dot(xi_30, xt_30), y_30)
     if(i<180):
-        prediccion_dia_siguiente=reg.predict(np.array([[Matriz['Uno'][i+1],Matriz['R(t-1)'][i+1],Matriz['R(t-2)'][i+1],Matriz['R(t-3)'][i+1],Matriz['R(t-4)'][i+1],Matriz['R(t-5)'][i+1]]]))
+        prediccion_dia_siguiente=(parametros[0] + parametros[1]*x[1][1] + parametros[2]*x[1][2] + parametros[3]*x[1][3] + parametros[4]*x[1][4])
         prediccion_ventana = np.append(prediccion_ventana,prediccion_dia_siguiente)
         rentabilidad_total= rentabilidad_total + (prediccion_dia_siguiente-Matriz['R(t)'][i])
-    if(i!=181):# no tengo que actualizar la ventana deslizante en la ultima iteracion
-        x_30 = np.delete(x_30,0,axis=0)
-        y_30 = np.delete(y_30,0,axis=0)
-        x_30 = np.append(x_30, [[Matriz['Uno'][i],Matriz['R(t-1)'][i],Matriz['R(t-2)'][i],Matriz['R(t-3)'][i],Matriz['R(t-4)'][i],Matriz['R(t-5)'][i]]], axis=0)
-        y_30 = np.append(y_30, [y[i]], axis=0)
+    contador=contador+1
+
+
 
 
 
@@ -185,5 +198,5 @@ print("El valor del tercer regresor utilizando una ventana deslizante (",predicc
 print("Rentabilidad total: ",rentabilidad_total)
 '''
 6. es dicha rentabilidad positiva? (2 puntos)
-    si ....
+    Si ....
 '''
